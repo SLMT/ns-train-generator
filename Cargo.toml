@@ -1,0 +1,16 @@
+[package]
+name = "ns-train-generator"
+version = "0.1.0"
+authors = ["SLMT <sam123456777@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+toml = "0.5"
+serde = { version = "1.0", features = ["derive"] }
+clap = "2.33.0"
+log = "0.4"
+pretty_env_logger = "0.3"
+colored = "1.8"
+postgres = "0.15"
+csv = "1"
+

@@ -1,0 +1,14 @@
+
+[db]
+username = "yicchen"
+password = "datalab"
+db_name = "yicchen"
+table_name = "y2017_16"
+port = "5433"
+host = "localhost"
+
+[generator]
+high_mean = [1, 2, 40, 25, 65, 65, 1, 125, 16, 120, 225, 250, 1, 3, 8, 6]
+low_mean = [0, 0, 10,  5, 10, 10, 1,  10,  3,  10,  20,  20, 0, 0, 1, 1]
+high_variance = [1, 1, 10,  6, 16, 16, 1,  30,  4,  30,  56,  62, 1, 1, 2, 2]
+low_variance = [1, 1, 10,  6, 16, 16, 1,  30,  4,  30,  56,  62, 1, 1, 2, 2]
