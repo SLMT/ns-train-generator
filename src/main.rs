@@ -1,3 +1,5 @@
+#[macro_use(s)]
+extern crate ndarray;
 
 mod error;
 mod config;
@@ -50,12 +52,12 @@ fn execute(out_file: &str, data_file: Option<&str>, config_file: &str)
 
     // Step 1: Read the DB (build the DB if it doesn't exist)
     info!("Loading all the data from the DB");
-    let rows = init::load_data(&config, data_file)?;
+    let data = init::load_data(&config, data_file)?;
     info!("Finished loading all the data from the DB");
 
     // Step 2: Generate training data
     info!("Generating training data set");
-    generate::gen_training_data(&config, &rows)?;
+    generate::gen_training_data(&config, data)?;
     info!("Finished generating training data set");
     
     Ok(())

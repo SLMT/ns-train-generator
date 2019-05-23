@@ -16,6 +16,7 @@ pub enum GeneratorError {
     FloatParseError(num::ParseFloatError),
     IntParseError(num::ParseIntError),
     DbError(postgres::Error),
+    NdArrayError(ndarray::ShapeError),
     Message(String)
 }
 
@@ -61,5 +62,11 @@ impl From<num::ParseIntError> for GeneratorError {
 impl From<postgres::Error> for GeneratorError {
     fn from(error: postgres::Error) -> Self {
         GeneratorError::DbError(error)
+    }
+}
+
+impl From<ndarray::ShapeError> for GeneratorError {
+    fn from(error: ndarray::ShapeError) -> Self {
+        GeneratorError::NdArrayError(error)
     }
 }

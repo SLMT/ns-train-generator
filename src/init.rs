@@ -1,13 +1,13 @@
 
-use postgres::{Connection, TlsMode, types::ToSql};
-
+use postgres::{Connection, types::ToSql};
 use log::*;
+use ndarray::Array2;
 
 use crate::config::Config;
 use crate::error::{GeneratorError, Result};
 
 pub fn load_data(config: &Config, data_file: Option<&str>)
-        -> Result<Vec<Vec<f64>>> {
+        -> Result<Array2<f64>> {
     // Build the connection to the DB
     let conn = config.connect_db()?;
 
@@ -29,7 +29,7 @@ pub fn load_data(config: &Config, data_file: Option<&str>)
 
             // Read the data from the data file
             let data = read_data_from_file(data_file)?;
-            let col_num = data[0].len();
+            let col_num = data.cols();
 
             // Build the DB
             create_schema(&conn, &config.db.table_name, col_num)?;
@@ -43,8 +43,7 @@ pub fn load_data(config: &Config, data_file: Option<&str>)
 }
 
 fn read_data_from_db(conn: &Connection, table_name: &str)
-        -> Result<Option<Vec<Vec<f64>>>> {
-    let mut rows = Vec::new();
+        -> Result<Option<Array2<f64>>> {
     let sql = format!("SELECT * FROM {}", table_name);
 
     // New transaction
@@ -60,7 +59,7 @@ fn read_data_from_db(conn: &Connection, table_name: &str)
             match e.as_db() {
                 Some(db_err) => {
                     if db_err.message.contains("does not exist") {
-                        warn!("DB Error: {}", db_err.message);
+                        warn!("DB Warning: {}", db_err.message);
                         return Ok(None);
                     }
                 },
@@ -71,27 +70,27 @@ fn read_data_from_db(conn: &Connection, table_name: &str)
     };
 
     // Read the data
-    let mut count = 0;
+    let (row_num, col_num) = (scan.len(), scan.columns().len());
+    let mut data: Array2<f64> = Array2::zeros((row_num, col_num));
+    let mut ri = 0;
     for row in scan.iter() {
-        let mut row_vec: Vec<f64> = Vec::with_capacity(row.len());
         for ci in 0 .. row.len() {
-            row_vec.push(row.get(ci));
+            data[[ri, ci]] = row.get(ci);
         }
-        rows.push(row_vec);
-        count += 1;
-        if count % 100 == 0 {
-            info!("{} records have been read from the DB.", count);
+        ri += 1;
+        if ri % 100 == 0 {
+            info!("{} records have been read from the DB.", ri);
         }
     }
 
     // Commit
     transaction.commit()?;
 
-    Ok(Some(rows))
+    Ok(Some(data))
 }
 
 fn read_data_from_file(data_file: &str)
-        -> Result<Vec<Vec<f64>>> {
+        -> Result<Array2<f64>> {
     let mut rows = Vec::new();
     let mut builder = csv::ReaderBuilder::new();
     builder.has_headers(false);
@@ -99,6 +98,7 @@ fn read_data_from_file(data_file: &str)
 
     info!("Reading data from \"{}\"", data_file);
 
+    // Read data from the csv file
     for result in csv_reader.records() {
         let record = result?;
         let row: std::result::Result<Vec<f64>, _> = record.iter()
@@ -106,8 +106,13 @@ fn read_data_from_file(data_file: &str)
         rows.push(row?);
     }
 
+    // Convert to Array2
+    let shape = (rows.len(), rows[0].len());
+    let raw_vec: Vec<f64> = rows.into_iter().flatten().collect();
+    let data = Array2::from_shape_vec(shape, raw_vec)?;
+
     info!("Finished reading data from \"{}\"", data_file);
-    Ok(rows)
+    Ok(data)
 }
 
 fn create_schema(conn: &Connection, table_name: &str, col_num: usize) -> Result<()> {
@@ -146,11 +151,11 @@ fn create_schema(conn: &Connection, table_name: &str, col_num: usize) -> Result<
     Ok(())
 }
 
-fn insert_data(conn: &Connection, table_name: &str, rows: &Vec<Vec<f64>>) -> Result<()> {
+fn insert_data(conn: &Connection, table_name: &str, data: &Array2<f64>) -> Result<()> {
     info!("Inserting data into \"{}\"", table_name);
 
     // Generate the SQL
-    let col_num = rows[0].len();
+    let col_num = data.cols();
     let mut sql = String::new();
     sql.push_str("INSERT INTO ");
     sql.push_str(table_name);
@@ -176,13 +181,13 @@ fn insert_data(conn: &Connection, table_name: &str, rows: &Vec<Vec<f64>>) -> Res
     let transaction = conn.transaction()?;
     let stmt = transaction.prepare(&sql)?;
 
-    let mut count = 0;
-    for row in rows {
-        let ref_vec: Vec<_> = row.iter().map(|f| f as &dyn ToSql).collect();
-        stmt.execute(&ref_vec[..])?;
-        count += 1;
-        if count % 1000 == 0 {
-            info!("{} records have been inserted.", count);
+    for ri in 0 .. data.rows() {
+        let row = data.row(ri);
+        let row_vec: Vec<_> = row.iter().map(|f| f as &dyn ToSql).collect();
+        stmt.execute(&row_vec[..])?;
+
+        if (ri + 1) % 1000 == 0 {
+            info!("{} records have been inserted.", (ri + 1));
         }
     }
 

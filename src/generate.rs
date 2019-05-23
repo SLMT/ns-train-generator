@@ -1,6 +1,7 @@
 
 use postgres::{types::ToSql, stmt::Statement};
 use log::*;
+use ndarray::Array2;
 
 use crate::error::{GeneratorError, Result};
 use crate::config::Config;
@@ -11,7 +12,7 @@ struct Fields {
     group_fields: Vec<usize>
 }
 
-pub fn gen_training_data(config: &Config, rows: &Vec<Vec<f64>>) -> Result<()> {
+pub fn gen_training_data(config: &Config, rows: Array2<f64>) -> Result<()> {
     let fields = Fields {
         agg_fields: vec![0],
         select_fields: vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
@@ -71,6 +72,14 @@ fn generate_sql(table_name: &str, fields: &Fields) -> String {
         " WHERE " + &predicates[..predicates.len()-5] +
         ";";
     sql
+}
+
+fn partition() {
+    // Partition the data
+
+    // Generate bias from normal distribution
+
+    // [lower, upper, range]
 }
 
 fn read_true_answer(ranges: &Vec<f64>, stmt: &Statement) -> Result<(i64, Vec<f64>)> {

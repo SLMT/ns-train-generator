@@ -13,4 +13,4 @@ pretty_env_logger = "0.3"
 colored = "1.8"
 postgres = "0.15"
 csv = "1"
-
+ndarray = "0.12"
