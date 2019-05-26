@@ -10,11 +10,39 @@
 > cargo build --release
 ```
 
-程式會產生在 `target/release/ns-train-generator.ex`。
+程式會產生在 `target/release/ns-train-generator.exe`。
 
-### 使用
+### 設定
 
-使用方式如下：
+使用前記得先修改 `config.toml` 的內容進行設定：
+
+```toml
+# 資料庫相關設定
+[db]
+username = "yicchen"
+password = "datalab"
+db_name = "yicchen"
+table_name = "y2017_16"
+port = "5433"
+host = "localhost"
+
+# 產生資料時要使用的 field 編號
+[generator.fields]
+agg_fields = [0]
+select_fields = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+group_fields = [] # 以 select_fields 內的順序為準
+
+# 產生資料時的 Normal Distribution 參數，注意 means 跟 std_devs 的 shape 要相同
+[generator.normal]
+means = [[1, 2, 40, 25, 65, 65, 1, 125, 16, 120, 225, 250, 1, 3, 8, 6],
+         [0, 0, 10,  5, 10, 10, 1,  10,  3,  10,  20,  20, 0, 0, 1, 1]]
+std_devs = [[1, 1, 10,  6, 16, 16, 1, 30,  4,  30,  56,  62, 1, 1, 2, 2],
+            [1, 1, 10,  6, 16, 16, 1, 30,  4,  30,  56,  62, 1, 1, 2, 2]]
+```
+
+### 使用方式
+
+使用說明如下：
 
 ```
 NS Train Generator 1.0
@@ -36,6 +64,8 @@ ARGS:
     <OUTPUT FILE PREFIX>    Sets the prefix name/path of the output data file
     <# OF THREADS>          Sets the number of threads generating training data set
 ```
+
+### 使用範例
 
 例如要使用 4 個 thread，並且將最後產生的檔案以 `out` 最為開頭命名：
 
