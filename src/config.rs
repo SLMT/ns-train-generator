@@ -7,13 +7,13 @@ use log::*;
 
 use crate::error::Result;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Config {
     pub db: DbConfig,
     pub generator: GeneratorConfig,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct DbConfig {
     pub username: String,
     pub password: String,
@@ -23,14 +23,24 @@ pub struct DbConfig {
     pub host: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct GeneratorConfig {
-    pub high_mean: Vec<i32>,
-    pub low_mean: Vec<i32>,
-    pub high_variance: Vec<i32>,
-    pub low_variance: Vec<i32>,
+    pub fields: GeneratorFields,
+    pub normal: GeneratorNormal,
 }
 
+#[derive(Deserialize, Debug, Clone)]
+pub struct GeneratorFields {
+    pub agg_fields: Vec<i32>,
+    pub select_fields: Vec<i32>,
+    pub group_fields: Vec<i32>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct GeneratorNormal {
+    pub means: Vec<Vec<f64>>,
+    pub std_devs: Vec<Vec<f64>>,
+}
 
 impl Config {
     pub fn from_file(path: &str) -> Result<Config> {

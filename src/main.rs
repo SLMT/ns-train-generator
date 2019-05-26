@@ -1,4 +1,4 @@
-#[macro_use(s)]
+#[macro_use(s, stack)]
 extern crate ndarray;
 
 mod error;
@@ -19,9 +19,13 @@ fn main() {
                        .version("1.0")
                        .author("Yu-Shan Lin <yslin@datalab.cs.nthu.edu.tw>")
                        .about("The generator that generates the training data set for neural storage project.")
-                       .arg(Arg::with_name("OUTPUT FILE")
-                            .help("Sets the path to the output data file")
+                       .arg(Arg::with_name("OUTPUT FILE PREFIX")
+                            .help("Sets the prefix name/path of the output data file")
                             .index(1)
+                            .required(true))
+                       .arg(Arg::with_name("# OF THREADS")
+                            .help("Sets the number of threads generating training data set")
+                            .index(2)
                             .required(true))
                        .arg(Arg::with_name("DATA FILE")
                             .short("d")
@@ -35,17 +39,18 @@ fn main() {
                             .takes_value(true))
                        .get_matches();
 
-    let out_file = matches.value_of("OUTPUT FILE").unwrap();
+    let out_file = matches.value_of("OUTPUT FILE PREFIX").unwrap();
+    let thread_count = matches.value_of("# OF THREADS").unwrap();
     let data_file = matches.value_of("DATA FILE");
     let config_file = matches.value_of("CONFIG FILE").unwrap_or("config.toml");
     
-    match execute(out_file, data_file, config_file) {
+    match execute(out_file, thread_count, data_file, config_file) {
         Ok(_) => println!("The generator finishes the job."),
         Err(e) => eprintln!("The generator exits with an error:\n{:#?}", e)
     }
 }
 
-fn execute(out_file: &str, data_file: Option<&str>, config_file: &str)
+fn execute(out_file: &str, thread_count: &str, data_file: Option<&str>, config_file: &str)
         -> Result<()> {
     
     let config = Config::from_file(&config_file)?;
@@ -57,7 +62,7 @@ fn execute(out_file: &str, data_file: Option<&str>, config_file: &str)
 
     // Step 2: Generate training data
     info!("Generating training data set");
-    generate::gen_training_data(&config, data)?;
+    generate::gen_training_data(&config, thread_count.parse()?, data, out_file)?;
     info!("Finished generating training data set");
     
     Ok(())
